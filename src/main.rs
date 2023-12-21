@@ -57,8 +57,10 @@ fn main() -> Result<(), anyhow::Error> {
 
 #[derive(clap::Parser, Debug)]
 struct Config {
+    /// the image format of the output images
     #[arg(short, long, value_enum,default_value_t = OutputFormat::Png)]
     format: OutputFormat,
+    /// interpolation used when sampling source image
     #[arg(short, long,value_enum, default_value_t = Interpolation::Linear)]
     interpolation: Interpolation,
     /// the input equirectangular image's path
@@ -68,7 +70,7 @@ struct Config {
     #[arg(short, long, default_value_t = 512)]
     /// size (px) of the output images, width = height
     size: u32,
-    /// rotate to a z-up skybox if you use it in a y-up renderer, not implemented for now
+    /// rotate to a z-up skybox if you use it in a y-up renderer
     #[arg(short, long, default_value_t = false)]
     rotate: bool,
 }
