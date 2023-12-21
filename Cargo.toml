@@ -10,3 +10,6 @@ anyhow = "1.0.75"
 clap = { version = "4.4.11", features = ["derive"] }
 image = { version = "0.24.7", features = ["webp-encoder"] }
 rayon = "1.8.0"
+
+[profile.release]
+panic = "abort"

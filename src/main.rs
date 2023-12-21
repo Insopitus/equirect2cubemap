@@ -3,9 +3,9 @@ mod math;
 use std::{fmt::Display, fs::create_dir_all, path::PathBuf};
 
 use anyhow::Ok;
-use image::{DynamicImage, EncodableLayout, ImageBuffer, Rgba, RgbaImage};
+use image::{imageops, DynamicImage, EncodableLayout, ImageBuffer, Rgba, RgbaImage};
 use math::Interpolation;
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
 use crate::math::{SphericalAngle, Vector3};
 
@@ -21,8 +21,18 @@ fn main() -> Result<(), anyhow::Error> {
     }
 
     create_dir_all(&config.output)?;
+    let start_time = std::time::Instant::now();
     // convert equirect to cubemaps
-    let data = convert(&config, img);
+    let mut data = convert(&config, img);
+    let elapsed = start_time.elapsed();
+    println!("Convert: {:?}", elapsed);
+    if config.rotate {
+        let start_time = std::time::Instant::now();
+        data = rotate(data);
+        let elapsed = start_time.elapsed();
+        println!("Rotate: {:?}", elapsed);
+    }
+    let start_time = std::time::Instant::now();
     let size = config.size;
     // write images to disk
     data.par_iter().for_each(|(img, side)| {
@@ -36,7 +46,12 @@ fn main() -> Result<(), anyhow::Error> {
         )
         .unwrap();
     });
-
+    let elapsed = start_time.elapsed();
+    println!("Save: {:?}", elapsed);
+    println!(
+        r#"Generated images has been saved in "{}""#,
+        config.output.display()
+    );
     Ok(())
 }
 
@@ -204,6 +219,26 @@ fn convert(config: &Config, img: DynamicImage) -> Vec<(ImageBuffer<Rgba<u8>, Vec
                 }
             }
             (square, *side)
+        })
+        .collect()
+}
+
+fn rotate(
+    entries: Vec<(ImageBuffer<Rgba<u8>, Vec<u8>>, Side)>,
+) -> Vec<(ImageBuffer<Rgba<u8>, Vec<u8>>, Side)> {
+    use imageops::*;
+    entries
+        .into_par_iter()
+        .map(|(img, side)| {
+            let image = match side {
+                Side::Top => img,
+                Side::Bottom => rotate180(&img),
+                Side::Left => rotate180(&img),
+                Side::Right => img,
+                Side::Front => rotate270(&img),
+                Side::Back => rotate90(&img),
+            };
+            (image, side)
         })
         .collect()
 }
