@@ -1,3 +1,4 @@
+```
 Usage: equirect2cubemap [OPTIONS] <INPUT> <OUTPUT>
 
 Arguments:
@@ -10,3 +11,4 @@ Options:
   -s, --size <SIZE>                    size (px) of the output images, width = height [default: 512]
   -r, --rotate                         rotate to a z-up skybox if you use it in a y-up renderer
   -h, --help                           Print help
+```
