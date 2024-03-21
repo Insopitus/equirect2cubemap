@@ -13,7 +13,10 @@ fn main() -> Result<()> {
     use clap::Parser;
     let config = Config::parse();
     let path = &config.input;
+    let start_time = std::time::Instant::now();
     let img = image::open(path)?;
+    let elapsed = start_time.elapsed();
+    println!("Read and Parse: {:?}", elapsed);
     let width = img.width();
     let height = img.height();
     if width != height * 2 {

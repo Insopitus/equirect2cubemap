@@ -17,6 +17,7 @@ impl SphericalAngle {
     }
     pub fn to_uv(&self) -> (f32, f32) {
         use std::f32::consts::PI;
+
         (self.theta / (2.0 * PI) + 0.5, self.phi / PI + 0.5)
     }
 }

@@ -8,8 +8,10 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.75"
 clap = { version = "4.4.11", features = ["derive"] }
-image = { version = "0.24.7", features = ["webp-encoder"] }
+image = { version = "0.25" }
 rayon = "1.8.0"
 
 [profile.release]
 panic = "abort"
+strip = true
+lto = true
