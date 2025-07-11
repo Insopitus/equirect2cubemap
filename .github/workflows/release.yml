@@ -16,15 +16,12 @@ jobs:
         include:
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
-            bin_name: equirect2cubemap
             ext: ""
           - target: x86_64-apple-darwin
             os: macos-latest
-            bin_name: equirect2cubemap
             ext: ""
           - target: x86_64-pc-windows-msvc
             os: windows-latest
-            bin_name: equirect2cubemap.exe
             ext: ".exe"
 
     steps:
@@ -34,7 +31,9 @@ jobs:
       - name: Get repository name
         id: repo
         run: |
-          echo "repo_name=$(echo '${{ github.repository }}' | awk -F/ '{print $2}')" >> $GITHUB_ENV
+          repo_name=$(echo '${{ github.repository }}' | awk -F/ '{print $2}')
+          echo "repo_name=$repo_name" >> $GITHUB_ENV
+        shell: bash  
 
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
@@ -57,7 +56,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.target }}
-          path: target/${{ matrix.target }}/release/${{ env.repo_name }}${{ matrix.ext }}
+          # 根据操作系统类型使用不同的路径语法
+          path: |
+            ${{ matrix.os == 'windows-latest' && 'target/x86_64-pc-windows-msvc/release/$env:repo_name' || 'target/${{ matrix.target }}/release/${{ env.repo_name }}' }}${{ matrix.ext }}
           if-no-files-found: error
 
   create-release:
@@ -68,7 +69,9 @@ jobs:
       - name: Get repository name
         id: repo
         run: |
-          echo "repo_name=$(echo '${{ github.repository }}' | awk -F/ '{print $2}')" >> $GITHUB_ENV
+          repo_name=$(echo '${{ github.repository }}' | awk -F/ '{print $2}')
+          echo "repo_name=$repo_name" >> $GITHUB_ENV
+        shell: bash 
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -86,10 +89,10 @@ jobs:
 
       - name: Create zip for Windows
         working-directory: artifacts/x86_64-pc-windows-msvc
+        shell: bash 
         run: |
-          powershell -command "Compress-Archive -Path ${{ env.repo_name }}.exe -DestinationPath ../../release/${{ env.repo_name }}-x86_64-pc-windows-msvc.zip"
-          cd ../../release
-          sha256sum ${{ env.repo_name }}-x86_64-pc-windows-msvc.zip > ${{ env.repo_name }}-x86_64-pc-windows-msvc.zip.sha256
+          zip -j ../../release/${{ env.repo_name }}-x86_64-pc-windows-msvc.zip ${{ env.repo_name }}.exe
+          sha256sum ../../release/${{ env.repo_name }}-x86_64-pc-windows-msvc.zip > ../../release/${{ env.repo_name }}-x86_64-pc-windows-msvc.zip.sha256
 
       - name: Generate release notes
         id: notes
