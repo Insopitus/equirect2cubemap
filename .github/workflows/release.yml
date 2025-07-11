@@ -2,7 +2,7 @@ name: Rust Release
 
 on:
   release:
-    types: [created]  # 监听 release 创建事件
+    types: [created] 
 
 env:
   CARGO_TERM_COLOR: always
