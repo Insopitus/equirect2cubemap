@@ -1,5 +1,5 @@
 ```
-Usage: equirect2cubemap [OPTIONS] <INPUT> <OUTPUT>
+Usage: equirect2cubemap.exe [OPTIONS] <INPUT> <OUTPUT>
 
 Arguments:
   <INPUT>   the input equirectangular image's path
@@ -10,5 +10,7 @@ Options:
   -i, --interpolation <INTERPOLATION>  interpolation used when sampling source image [default: linear] [possible values: linear, nearest]
   -s, --size <SIZE>                    size (px) of the output images, width = height [default: 512]
   -r, --rotate                         rotate to a z-up skybox if you use it in a y-up renderer
+  -t, --tone-mapping                   enable tone mapping (Reinhard)
+  -e, --exposure <EXPOSURE>            exposure of tone mapping [default: 1]
   -h, --help                           Print help
 ```
