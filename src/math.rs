@@ -1,4 +1,4 @@
-use image::{imageops::sample_nearest, DynamicImage, Rgba};
+use image::{imageops::sample_nearest, DynamicImage, Pixel, Rgba};
 
 /// spherical coord without radius
 #[derive(Debug)]
@@ -28,13 +28,13 @@ pub enum Interpolation {
     Nearest,
 }
 impl Interpolation {
-    pub fn sample(&self, img: &DynamicImage, uv: (f32, f32)) -> Rgba<u8> {
+    pub fn sample(&self, img: &DynamicImage, uv: (f32, f32)) -> Rgba<f32> {
         use image::imageops::sample_bilinear;
         match self {
             Self::Linear => sample_bilinear(img, uv.0, uv.1),
             Self::Nearest => sample_nearest(img, uv.0, uv.1),
         }
-        .unwrap_or(Rgba([0, 0, 0, 255]))
+        .unwrap_or(Rgba([0.0,0.0,0.0,1.0]))
     }
 }
 
