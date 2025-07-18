@@ -1,4 +1,4 @@
-use image::{DynamicImage, ImageBuffer, Rgba, RgbaImage};
+use image::{DynamicImage, GenericImage,  ImageBuffer, Rgba, RgbaImage};
 use rayon::prelude::*;
 use std::fs::create_dir_all;
 use std::{fmt::Display, path::PathBuf};
@@ -6,6 +6,8 @@ use std::{fmt::Display, path::PathBuf};
 mod math;
 use anyhow::{Ok, Result};
 use math::{Interpolation, SphericalAngle, Vector3};
+
+use crate::math::{reinhard_tone_mapping_rgb, reinhard_tone_mapping_rgba};
 
 type ImageBufferData = ImageBuffer<Rgba<u8>, Vec<u8>>;
 
@@ -25,6 +27,42 @@ fn main() -> Result<()> {
 
     create_dir_all(&config.output)?;
     let start_time = std::time::Instant::now();
+    let exposure = config.exposure;
+    let img = if config.tone_mapping{
+        match img{
+            
+            DynamicImage::ImageRgb32F(image_buffer) => {
+                let (width,height) = image_buffer.dimensions();
+                let mut new_image = DynamicImage::new_rgba8(width, height);
+                for x in 0..width{
+                    for y in 0..height{
+                        let pixel = image_buffer.get_pixel(x, y);
+                        let mapped = reinhard_tone_mapping_rgb(*pixel, exposure);
+                        new_image.put_pixel(x, y, mapped);
+                    }
+                }
+                new_image
+                
+            },
+            DynamicImage::ImageRgba32F(image_buffer) => {
+                let (width,height) = image_buffer.dimensions();
+                let mut new_image = DynamicImage::new_rgb8(width, height);
+                for x in 0..width{
+                    for y in 0..height{
+                        let pixel = image_buffer.get_pixel(x, y);
+                        let mapped = reinhard_tone_mapping_rgba(*pixel, exposure);
+                        new_image.put_pixel(x, y, mapped);
+                    }
+                }
+                new_image
+            },
+            _ => {
+                img
+            },
+        }
+    }else{
+        img
+    };
     // convert equirect to cubemaps
     let mut data = convert(&config, img);
     let elapsed = start_time.elapsed();
@@ -80,6 +118,12 @@ struct Config {
     /// rotate to a z-up skybox if you use it in a y-up renderer
     #[arg(short, long, default_value_t = false)]
     rotate: bool,
+    /// enable tone mapping (Reinhard)
+    #[arg(short,long,default_value_t=false)]
+    tone_mapping:bool,
+    /// exposure of tone mapping
+    #[arg(short,long,default_value_t=1.0)]
+    exposure:f32
 }
 #[derive(clap::ValueEnum, Clone, Debug, Copy)]
 enum OutputFormat {
@@ -180,3 +224,5 @@ fn rotate(entries: Vec<(ImageBufferData, Side)>) -> Vec<(ImageBufferData, Side)>
         })
         .collect()
 }
+
+

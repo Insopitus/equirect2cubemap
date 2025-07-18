@@ -1,4 +1,4 @@
-use image::{imageops::sample_nearest, DynamicImage, Pixel, Rgba};
+use image::{imageops::sample_nearest, DynamicImage, Pixel, Rgb, Rgba};
 
 /// spherical coord without radius
 #[derive(Debug)]
@@ -28,14 +28,36 @@ pub enum Interpolation {
     Nearest,
 }
 impl Interpolation {
-    pub fn sample(&self, img: &DynamicImage, uv: (f32, f32)) -> Rgba<f32> {
+    pub fn sample(&self, img: &DynamicImage, uv: (f32, f32)) -> Rgba<u8> {
         use image::imageops::sample_bilinear;
         match self {
             Self::Linear => sample_bilinear(img, uv.0, uv.1),
             Self::Nearest => sample_nearest(img, uv.0, uv.1),
         }
-        .unwrap_or(Rgba([0.0,0.0,0.0,1.0]))
+        .unwrap_or(Rgba::<u8>([0, 0, 0, 255]))
     }
+}
+
+pub fn reinhard_tone_mapping_rgba(color: Rgba<f32>, exposure: f32) -> Rgba<u8> {
+    let r = (color[0] * exposure) / (1.0 + color[0] * exposure);
+    let g = (color[1] * exposure) / (1.0 + color[1] * exposure);
+    let b = (color[2] * exposure) / (1.0 + color[2] * exposure);
+    let r = (r * 255.0).round() as u8;
+    let g = (g * 255.0).round() as u8;
+    let b = (b * 255.0).round() as u8;
+    let a = (color[3] * 255.0).round() as u8;
+
+    [r, g, b, a].into()
+}
+pub fn reinhard_tone_mapping_rgb(color: Rgb<f32>, exposure: f32) -> Rgba<u8> {
+    let r = (color[0] * exposure) / (1.0 + color[0] * exposure);
+    let g = (color[1] * exposure) / (1.0 + color[1] * exposure);
+    let b = (color[2] * exposure) / (1.0 + color[2] * exposure);
+    let r = (r * 255.0).round() as u8;
+    let g = (g * 255.0).round() as u8;
+    let b = (b * 255.0).round() as u8;
+
+    [r, g, b,255].into()
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -73,26 +95,3 @@ impl Vector3 {
     // }
 }
 
-// impl std::ops::Add for Vector3 {
-//     type Output = Vector3;
-
-//     fn add(self, rhs: Self) -> Self::Output {
-//         Vector3 {
-//             x: self.x + rhs.x,
-//             y: self.y + rhs.y,
-//             z: self.z + rhs.z,
-//         }
-//     }
-// }
-
-// impl std::ops::Sub for Vector3 {
-//     type Output = Vector3;
-
-//     fn sub(self, rhs: Self) -> Self::Output {
-//         Vector3 {
-//             x: self.x - rhs.x,
-//             y: self.y - rhs.y,
-//             z: self.z - rhs.z,
-//         }
-//     }
-// }
