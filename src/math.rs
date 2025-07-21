@@ -1,4 +1,4 @@
-use image::{imageops::sample_nearest, DynamicImage, Pixel, Rgb, Rgba};
+use image::{imageops::sample_nearest, DynamicImage, Rgb, Rgba};
 
 /// spherical coord without radius
 #[derive(Debug)]
@@ -57,7 +57,7 @@ pub fn reinhard_tone_mapping_rgb(color: Rgb<f32>, exposure: f32) -> Rgba<u8> {
     let g = (g * 255.0).round() as u8;
     let b = (b * 255.0).round() as u8;
 
-    [r, g, b,255].into()
+    [r, g, b, 255].into()
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -94,4 +94,3 @@ impl Vector3 {
     //     self.x * self.x + self.y * self.y + self.z * self.z
     // }
 }
-

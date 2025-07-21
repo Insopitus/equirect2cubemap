@@ -1,6 +1,4 @@
-use image::{
-    DynamicImage, EncodableLayout, GenericImage, ImageBuffer, Pixel, Rgb, Rgba, RgbaImage,
-};
+use image::{DynamicImage, GenericImage, ImageBuffer, Pixel, Rgba, RgbaImage};
 use rayon::prelude::*;
 use std::fs::create_dir_all;
 use std::{fmt::Display, path::PathBuf};
@@ -20,7 +18,7 @@ fn main() -> Result<()> {
     let start_time = std::time::Instant::now();
     let img = image::open(path)?;
     let elapsed = start_time.elapsed();
-    println!("Read and Parse: {:?}", elapsed);
+    println!("Read and Parse: {elapsed:?}");
     let width = img.width();
     let height = img.height();
     if width != height * 2 {
@@ -159,10 +157,7 @@ impl Display for OutputFormat {
 }
 impl OutputFormat {
     pub fn is_rgb(&self) -> bool {
-        match self {
-            OutputFormat::Jpg => true,
-            _ => false,
-        }
+        matches!(self, OutputFormat::Jpg)
     }
 }
 
