@@ -1,4 +1,6 @@
-use image::{DynamicImage, GenericImage,  ImageBuffer, Rgba, RgbaImage};
+use image::{
+    DynamicImage, EncodableLayout, GenericImage, ImageBuffer, Pixel, Rgb, Rgba, RgbaImage,
+};
 use rayon::prelude::*;
 use std::fs::create_dir_all;
 use std::{fmt::Display, path::PathBuf};
@@ -28,39 +30,35 @@ fn main() -> Result<()> {
     create_dir_all(&config.output)?;
     let start_time = std::time::Instant::now();
     let exposure = config.exposure;
-    let img = if config.tone_mapping{
-        match img{
-            
+    let img = if config.tone_mapping {
+        match img {
             DynamicImage::ImageRgb32F(image_buffer) => {
-                let (width,height) = image_buffer.dimensions();
-                let mut new_image = DynamicImage::new_rgba8(width, height);
-                for x in 0..width{
-                    for y in 0..height{
+                let (width, height) = image_buffer.dimensions();
+                let mut new_image = DynamicImage::new_rgb8(width, height);
+                for x in 0..width {
+                    for y in 0..height {
                         let pixel = image_buffer.get_pixel(x, y);
                         let mapped = reinhard_tone_mapping_rgb(*pixel, exposure);
                         new_image.put_pixel(x, y, mapped);
                     }
                 }
                 new_image
-                
-            },
+            }
             DynamicImage::ImageRgba32F(image_buffer) => {
-                let (width,height) = image_buffer.dimensions();
-                let mut new_image = DynamicImage::new_rgb8(width, height);
-                for x in 0..width{
-                    for y in 0..height{
+                let (width, height) = image_buffer.dimensions();
+                let mut new_image = DynamicImage::new_rgba8(width, height);
+                for x in 0..width {
+                    for y in 0..height {
                         let pixel = image_buffer.get_pixel(x, y);
                         let mapped = reinhard_tone_mapping_rgba(*pixel, exposure);
                         new_image.put_pixel(x, y, mapped);
                     }
                 }
                 new_image
-            },
-            _ => {
-                img
-            },
+            }
+            _ => img,
         }
-    }else{
+    } else {
         img
     };
     // convert equirect to cubemaps
@@ -81,12 +79,22 @@ fn main() -> Result<()> {
 
     // write images to disk
     data.par_iter().for_each(|(img, side)| {
+        let (bytes, color_type) = if config.format.is_rgb() {
+            let (width, height) = img.dimensions();
+            let buffer = ImageBuffer::from_fn(width, height, |x, y| {
+                let p = img.get_pixel(x, y);
+                p.to_rgb()
+            });
+            (buffer.as_bytes().to_vec(), image::ColorType::Rgb8)
+        } else {
+            (img.as_bytes().to_vec(), image::ColorType::Rgba8)
+        };
         image::save_buffer_with_format(
             config.output.join(format!("{}.{}", side, &config.format)),
-            img.as_bytes(),
+            &bytes,
             size,
             size,
-            image::ColorType::Rgba8,
+            color_type,
             config.format.into(),
         )
         .unwrap();
@@ -119,11 +127,11 @@ struct Config {
     #[arg(short, long, default_value_t = false)]
     rotate: bool,
     /// enable tone mapping (Reinhard)
-    #[arg(short,long,default_value_t=false)]
-    tone_mapping:bool,
+    #[arg(short, long, default_value_t = false)]
+    tone_mapping: bool,
     /// exposure of tone mapping
-    #[arg(short,long,default_value_t=1.0)]
-    exposure:f32
+    #[arg(short, long, default_value_t = 1.0)]
+    exposure: f32,
 }
 #[derive(clap::ValueEnum, Clone, Debug, Copy)]
 enum OutputFormat {
@@ -146,6 +154,14 @@ impl Display for OutputFormat {
             OutputFormat::Jpg => write!(f, "jpg"),
             OutputFormat::Png => write!(f, "png"),
             OutputFormat::Webp => write!(f, "webp"),
+        }
+    }
+}
+impl OutputFormat {
+    pub fn is_rgb(&self) -> bool {
+        match self {
+            OutputFormat::Jpg => true,
+            _ => false,
         }
     }
 }
@@ -224,5 +240,3 @@ fn rotate(entries: Vec<(ImageBufferData, Side)>) -> Vec<(ImageBufferData, Side)>
         })
         .collect()
 }
-
-
